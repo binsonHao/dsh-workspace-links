@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Workspace links",
+    "description": "Manage related frontend, backend, and other projects visually in Settings → Workspace links. Choose two directories from registered workspaces or the system directory picker, set names, roles, and collaboration notes, then search, edit, or unlink at any time. Agents automatically receive the corresponding project context. Links do not grant file permissions or modify other projects."
+  }
+}

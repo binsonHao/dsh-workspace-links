@@ -1,0 +1,5 @@
+- insert:
+    - id: workspace-links
+      name: 'dsh-workspace-links'
+      config:
+        relations: []

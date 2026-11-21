@@ -1,0 +1,71 @@
+{
+  "name": "dsh-workspace-links",
+  "version": "2.1.0",
+  "description": "Visual related-workspace management and automatic project context for DeepSeek Harness.",
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./core": "./core.js",
+    "./runtime": "./runtime.js",
+    "./remote": "./remote.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "core.js",
+    "runtime.js",
+    "remote.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "LICENSE",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20",
+    "dsh": ">=0.2.2-rc.3 <0.3.0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-api-remotes",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-workspace",
+        "@deepseek-ai/dsh-client-ui-settings-general"
+      ]
+    }
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-typert-protocol": ">=0.2.2-rc.3 <0.3.0-0 || >=0.3.0-rc.1 <0.4.0-0"
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "workspace",
+    "multi-project",
+    "context"
+  ],
+  "author": "binsonHao",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/binsonHao/dsh-workspace-links.git"
+  },
+  "homepage": "https://github.com/binsonHao/dsh-workspace-links#readme",
+  "bugs": {
+    "url": "https://github.com/binsonHao/dsh-workspace-links/issues"
+  }
+}
