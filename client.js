@@ -7,6 +7,7 @@ window.__ModuleLoader__.load({
     const SECTION_ID = 'workspace-links';
     const PACKAGE = 'dsh-workspace-links';
     const NAMESPACE = 'workspaceLinks';
+    const MAX_GROUP_MEMBERS = 20;
 
     const passthrough = { parse: value => value };
     const descriptor = method => ({
@@ -31,44 +32,46 @@ window.__ModuleLoader__.load({
 
     const zh = {
       nav: '工作区关联', title: '工作区关联',
-      description: '把前端、后端和其他相关项目连接起来。保存后，AI 会在对应工作区中自动获得对方的名称、路径、角色和备注。',
-      current: '当前工作区', add: '新建关联', addFirst: '新建第一组关联', refresh: '刷新', refreshing: '正在刷新…',
-      createTitle: '新建工作区关联', editTitle: '编辑工作区关联', workspaceA: '工作区 A', workspaceB: '工作区 B',
-      selectWorkspace: '请选择工作区', browse: '选择目录…', nameA: 'A 的显示名称', nameB: 'B 的显示名称',
-      roleA: 'A 的项目角色', roleB: 'B 的项目角色', namePlaceholder: '默认使用工作区标题',
-      roleAPlaceholder: '例如：Vue 前端', roleBPlaceholder: '例如：Spring Boot 后端', note: '协作备注',
-      notePlaceholder: '例如：前后端共用 API 契约，修改接口时同步检查两边。', pathsLocked: '编辑时目录不可更改；如需更换目录，请新建关联后解除旧关联。',
-      save: '保存关联', saving: '正在保存…', cancel: '取消', edit: '编辑', remove: '解除关联',
-      removeTitle: '确认解除关联', removeDescription: '只删除这组关联，不会删除工作区、会话或任何项目文件。', confirmRemove: '确认解除', removing: '正在解除…',
-      created: '关联已创建，AI 后续请求会自动获得这组项目上下文。', updated: '关联已更新。', removed: '关联已解除；工作区和项目文件均未改动。',
-      notFound: '这组关联已经不存在，列表已刷新。', saveFailed: '保存关联失败：{message}', removeFailed: '解除关联失败：{message}',
-      loadFailed: '读取工作区关联失败：{message}', browseFailed: '选择目录失败：{message}', samePath: '两个工作区不能是同一个目录。',
-      requiredPath: '请先选择两个工作区。', emptyTitle: '还没有工作区关联', emptyDescription: '将前端、后端或其他相关项目连接起来，之后无需再向 AI 重复提供项目路径。',
-      noMatches: '没有匹配的关联', resultsLabel: '工作区关联列表', count: '共 {total} 组关联', filteredCount: '显示 {shown} / {total} 组关联',
-      searchLabel: '搜索关联', searchPlaceholder: '名称、路径、角色或备注', clearSearch: '清空搜索', loading: '正在读取工作区关联…',
-      readonly: '当前身份只能查看关联，不能修改。', readonlySave: '当前身份不能新建或编辑关联，但可以解除已有关系。', readonlyRemove: '当前身份不能解除关联，但可以新建或编辑关系。',
-      savedRefreshFailed: '关联已保存，但列表刷新失败；请点击“刷新”查看最新状态。', savedRefreshFailedRemove: '关联已解除，但列表刷新失败；请点击“刷新”查看最新状态。',
+      description: '把前端、后端、移动端等项目加入同一个关联组。组内任意工作区都能自动获得其他成员的名称、路径、角色和备注。',
+      current: '当前工作区', add: '新建关联组', addFirst: '新建第一组关联', refresh: '刷新', refreshing: '正在刷新…',
+      createTitle: '新建工作区关联组', editTitle: '编辑工作区关联组', addMember: '添加工作区', removeMember: '移除',
+      memberLabel: '工作区 {index}', memberCount: '{count} 个工作区', workspacePath: '工作区目录',
+      selectWorkspace: '请选择工作区', browse: '选择目录…', name: '显示名称', role: '项目角色',
+      namePlaceholder: '默认使用工作区标题', rolePlaceholder: '例如：Vue 前端、Spring Boot 后端', note: '协作备注',
+      notePlaceholder: '例如：前后端共用 API 契约，修改接口时同步检查两边。',
+      groupHelp: '一个组可包含 2–{max} 个工作区；组内任一成员都能看到其他成员的路径、角色和备注。',
+      save: '保存关联组', saving: '正在保存…', cancel: '取消', edit: '编辑', remove: '解除关联',
+      removeTitle: '确认解除这组关联', removeDescription: '只删除这组关联，不会删除工作区、会话或任何项目文件。', confirmRemove: '确认解除', removing: '正在解除…',
+      created: '关联组已创建，组内工作区后续请求会自动获得其他成员的项目上下文。', updated: '关联组已更新。', removed: '关联组已解除；工作区和项目文件均未改动。',
+      notFound: '这组关联已经不存在，列表已刷新。', saveFailed: '保存关联组失败：{message}', removeFailed: '解除关联组失败：{message}',
+      loadFailed: '读取工作区关联失败：{message}', browseFailed: '选择目录失败：{message}', samePath: '组内不能重复选择同一个工作区。',
+      requiredPath: '一个关联组至少需要两个工作区。', emptyTitle: '还没有工作区关联组', emptyDescription: '把前端、后端、移动端等项目连接起来，之后无需再向 AI 重复提供项目路径。',
+      noMatches: '没有匹配的关联组', resultsLabel: '工作区关联组列表', count: '共 {total} 组关联', filteredCount: '显示 {shown} / {total} 组关联',
+      searchLabel: '搜索关联组', searchPlaceholder: '名称、路径、角色或备注', clearSearch: '清空搜索', loading: '正在读取工作区关联…',
+      readonly: '当前身份只能查看关联，不能修改。', readonlySave: '当前身份不能新建或编辑关联组，但可以解除已有关系。', readonlyRemove: '当前身份不能解除关联组，但可以新建或编辑关系。',
+      savedRefreshFailed: '关联组已保存，但列表刷新失败；请点击“刷新”查看最新状态。', savedRefreshFailedRemove: '关联组已解除，但列表刷新失败；请点击“刷新”查看最新状态。',
       rolesMissing: '未设置项目角色', noteMissing: '未填写协作备注',
     };
     const en = {
       nav: 'Workspace links', title: 'Workspace links',
-      description: 'Connect frontend, backend, and other related projects. Once saved, agents automatically see each workspace’s name, path, role, and notes.',
-      current: 'Current workspace', add: 'New link', addFirst: 'Create your first link', refresh: 'Refresh', refreshing: 'Refreshing…',
-      createTitle: 'New workspace link', editTitle: 'Edit workspace link', workspaceA: 'Workspace A', workspaceB: 'Workspace B',
-      selectWorkspace: 'Select a workspace', browse: 'Choose directory…', nameA: 'Display name for A', nameB: 'Display name for B',
-      roleA: 'Role of project A', roleB: 'Role of project B', namePlaceholder: 'Defaults to the workspace title',
-      roleAPlaceholder: 'For example: Vue frontend', roleBPlaceholder: 'For example: Spring Boot backend', note: 'Collaboration notes',
-      notePlaceholder: 'For example: both projects share an API contract and must be checked together.', pathsLocked: 'Paths cannot change while editing. Create a new link and remove the old one to change directories.',
-      save: 'Save link', saving: 'Saving…', cancel: 'Cancel', edit: 'Edit', remove: 'Unlink',
-      removeTitle: 'Unlink these workspaces?', removeDescription: 'Only this relationship is removed. Workspaces, sessions, and project files are not deleted.', confirmRemove: 'Unlink', removing: 'Unlinking…',
-      created: 'Link created. Agents will see this project context in subsequent requests.', updated: 'Link updated.', removed: 'Link removed. Workspaces and project files were not changed.',
-      notFound: 'This link no longer exists. The list has been refreshed.', saveFailed: 'Could not save the link: {message}', removeFailed: 'Could not unlink: {message}',
-      loadFailed: 'Could not load workspace links: {message}', browseFailed: 'Could not choose a directory: {message}', samePath: 'Choose two different workspace directories.',
-      requiredPath: 'Choose both workspaces first.', emptyTitle: 'No workspace links yet', emptyDescription: 'Connect frontend, backend, or other related projects so you no longer need to repeat their paths to agents.',
-      noMatches: 'No matching links', resultsLabel: 'Workspace link list', count: '{total} links', filteredCount: 'Showing {shown} of {total} links',
-      searchLabel: 'Search links', searchPlaceholder: 'Name, path, role, or notes', clearSearch: 'Clear search', loading: 'Loading workspace links…',
-      readonly: 'Your current identity can view links but cannot change them.', readonlySave: 'Your current identity cannot create or edit links, but can unlink existing ones.', readonlyRemove: 'Your current identity cannot unlink, but can create or edit links.',
-      savedRefreshFailed: 'The link was saved, but refreshing the list failed. Choose Refresh to see the latest state.', savedRefreshFailedRemove: 'The link was removed, but refreshing the list failed. Choose Refresh to see the latest state.',
+      description: 'Put frontend, backend, mobile, and other projects in one linked group. Every member automatically receives the other members’ names, paths, roles, and notes.',
+      current: 'Current workspace', add: 'New group', addFirst: 'Create your first group', refresh: 'Refresh', refreshing: 'Refreshing…',
+      createTitle: 'New workspace group', editTitle: 'Edit workspace group', addMember: 'Add workspace', removeMember: 'Remove',
+      memberLabel: 'Workspace {index}', memberCount: '{count} workspaces', workspacePath: 'Workspace directory',
+      selectWorkspace: 'Select a workspace', browse: 'Choose directory…', name: 'Display name', role: 'Project role',
+      namePlaceholder: 'Defaults to the workspace title', rolePlaceholder: 'For example: Vue frontend, Spring Boot backend', note: 'Collaboration notes',
+      notePlaceholder: 'For example: both projects share an API contract and must be checked together.',
+      groupHelp: 'A group can contain 2–{max} workspaces. Every member sees the paths, roles, and notes of all other members.',
+      save: 'Save group', saving: 'Saving…', cancel: 'Cancel', edit: 'Edit', remove: 'Unlink',
+      removeTitle: 'Unlink this group?', removeDescription: 'Only this relationship is removed. Workspaces, sessions, and project files are not deleted.', confirmRemove: 'Unlink', removing: 'Unlinking…',
+      created: 'Group created. Members will receive the other projects’ context in subsequent requests.', updated: 'Group updated.', removed: 'Group removed. Workspaces and project files were not changed.',
+      notFound: 'This group no longer exists. The list has been refreshed.', saveFailed: 'Could not save the group: {message}', removeFailed: 'Could not unlink the group: {message}',
+      loadFailed: 'Could not load workspace links: {message}', browseFailed: 'Could not choose a directory: {message}', samePath: 'Choose different workspaces within the group.',
+      requiredPath: 'A group needs at least two workspaces.', emptyTitle: 'No workspace groups yet', emptyDescription: 'Connect frontend, backend, mobile, or other related projects so you no longer need to repeat their paths to agents.',
+      noMatches: 'No matching groups', resultsLabel: 'Workspace group list', count: '{total} groups', filteredCount: 'Showing {shown} of {total} groups',
+      searchLabel: 'Search groups', searchPlaceholder: 'Name, path, role, or notes', clearSearch: 'Clear search', loading: 'Loading workspace links…',
+      readonly: 'Your current identity can view links but cannot change them.', readonlySave: 'Your current identity cannot create or edit groups, but can unlink existing ones.', readonlyRemove: 'Your current identity cannot unlink groups, but can create or edit them.',
+      savedRefreshFailed: 'The group was saved, but refreshing the list failed. Choose Refresh to see the latest state.', savedRefreshFailedRemove: 'The group was removed, but refreshing the list failed. Choose Refresh to see the latest state.',
       rolesMissing: 'No project role set', noteMissing: 'No collaboration notes',
     };
 
@@ -76,7 +79,7 @@ window.__ModuleLoader__.load({
       .wsl-page { width: 100%; max-width: 980px; color: var(--dsw-alias-label-primary); font-size: 14px; line-height: 1.55; }
       .wsl-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
       .wsl-heading { margin: 3px 0 5px; font-size: 21px; line-height: 29px; font-weight: 600; }
-      .wsl-description { max-width: 700px; margin: 0; color: var(--dsw-alias-label-secondary); }
+      .wsl-description { max-width: 720px; margin: 0; color: var(--dsw-alias-label-secondary); }
       .wsl-current { margin: 8px 0 0; color: var(--dsw-alias-label-secondary); font-size: 12px; }
       .wsl-actions { display: flex; flex: none; gap: 8px; }
       .wsl-button { min-height: 34px; padding: 6px 13px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; background: transparent; color: var(--dsw-alias-label-primary); font: inherit; font-size: 13px; cursor: pointer; }
@@ -85,13 +88,18 @@ window.__ModuleLoader__.load({
       .wsl-button-primary { border-color: var(--dsw-alias-label-primary); background: var(--dsw-alias-label-primary); color: var(--dsw-alias-bg-base); }
       .wsl-button-primary:hover:not(:disabled) { border-color: var(--dsw-alias-brand-primary); background: var(--dsw-alias-label-primary); color: var(--dsw-alias-bg-base); }
       .wsl-button-danger { color: var(--dsw-alias-state-error-primary); }
+      .wsl-button-small { min-height: 28px; padding: 3px 9px; font-size: 12px; }
       .wsl-button:focus-visible, .wsl-input:focus, .wsl-select:focus, .wsl-textarea:focus { outline: 2px solid var(--dsw-alias-brand-primary); outline-offset: 1px; }
       .wsl-panel { margin-bottom: 16px; padding: 18px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 12px; background: var(--dsw-alias-bg-layer-1); }
       .wsl-panel-title { margin: 0 0 14px; font-size: 16px; line-height: 22px; font-weight: 600; }
-      .wsl-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
+      .wsl-members { display: flex; flex-direction: column; gap: 10px; }
+      .wsl-member { padding: 12px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 9px; background: var(--dsw-alias-bg-base); }
+      .wsl-member-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 9px; }
+      .wsl-member-title { margin: 0; font-size: 13px; font-weight: 600; }
+      .wsl-member-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px 14px; margin-top: 9px; }
+      .wsl-add-member { width: 100%; margin-top: 10px; border-style: dashed; }
       .wsl-field { min-width: 0; }
-      .wsl-field-full { grid-column: 1 / -1; }
-      .wsl-label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 500; }
+      .wsl-label { display: block; margin-bottom: 5px; font-size: 12px; font-weight: 500; }
       .wsl-select-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
       .wsl-select-row .wsl-button { white-space: nowrap; }
       .wsl-select, .wsl-input, .wsl-textarea { box-sizing: border-box; width: 100%; min-width: 0; border: 1px solid var(--dsw-alias-border-l1); border-radius: 8px; background: var(--dsw-alias-bg-base); color: var(--dsw-alias-label-primary); font: inherit; }
@@ -99,7 +107,7 @@ window.__ModuleLoader__.load({
       .wsl-textarea { min-height: 86px; padding: 9px 10px; resize: vertical; }
       .wsl-select:disabled, .wsl-input:disabled, .wsl-textarea:disabled { opacity: 0.65; }
       .wsl-input::placeholder, .wsl-textarea::placeholder { color: var(--dsw-alias-label-secondary); opacity: 0.75; }
-      .wsl-help { margin: 6px 0 0; color: var(--dsw-alias-label-secondary); font-size: 12px; }
+      .wsl-help { margin: 9px 0 0; color: var(--dsw-alias-label-secondary); font-size: 12px; }
       .wsl-form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
       .wsl-notice { margin-bottom: 12px; padding: 10px 12px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 8px; background: var(--dsw-alias-bg-layer-1); }
       .wsl-notice-success { border-color: var(--dsw-alias-state-success-primary); }
@@ -111,13 +119,15 @@ window.__ModuleLoader__.load({
       .wsl-list { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
       .wsl-card { padding: 16px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 11px; background: var(--dsw-alias-bg-layer-1); }
       .wsl-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-      .wsl-pair { display: grid; grid-template-columns: minmax(0, 1fr) 24px minmax(0, 1fr); align-items: start; flex: 1; min-width: 0; gap: 8px; }
-      .wsl-endpoint { min-width: 0; }
+      .wsl-card-main { flex: 1; min-width: 0; }
+      .wsl-group-meta { margin-bottom: 7px; color: var(--dsw-alias-label-secondary); font-size: 12px; font-weight: 500; }
+      .wsl-card-members { display: flex; flex-direction: column; }
+      .wsl-member-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--dsw-alias-border-l1); }
+      .wsl-member-row:last-child { border-bottom: 0; }
       .wsl-endpoint-name { overflow-wrap: anywhere; font-weight: 600; }
       .wsl-path { overflow-wrap: anywhere; margin-top: 3px; color: var(--dsw-alias-label-secondary); font-family: monospace; font-size: 12px; }
-      .wsl-role { display: inline-block; margin-top: 7px; padding: 1px 7px; border-radius: 5px; background: var(--dsw-alias-bg-layer-2); color: var(--dsw-alias-label-secondary); font-size: 11px; }
+      .wsl-role { display: inline-block; margin-top: 2px; padding: 1px 7px; border-radius: 5px; background: var(--dsw-alias-bg-layer-2); color: var(--dsw-alias-label-secondary); font-size: 11px; white-space: nowrap; }
       .wsl-current-badge { display: inline-block; margin-left: 7px; padding: 0 6px; border: 1px solid var(--dsw-alias-brand-primary); border-radius: 5px; color: var(--dsw-alias-brand-primary); font-size: 10px; font-weight: 500; vertical-align: 1px; }
-      .wsl-link-icon { display: flex; justify-content: center; padding-top: 3px; color: var(--dsw-alias-brand-primary); }
       .wsl-note { margin: 12px 0 0; padding-top: 10px; border-top: 1px solid var(--dsw-alias-border-l1); color: var(--dsw-alias-label-secondary); white-space: pre-wrap; overflow-wrap: anywhere; }
       .wsl-card-actions { display: flex; flex: none; gap: 6px; }
       .wsl-confirm { margin-top: 14px; padding: 12px; border: 1px solid var(--dsw-alias-state-warn-primary); border-radius: 8px; background: var(--dsw-alias-bg-layer-2); }
@@ -131,13 +141,12 @@ window.__ModuleLoader__.load({
         .wsl-header, .wsl-toolbar { align-items: stretch; flex-direction: column; gap: 10px; }
         .wsl-actions { align-self: flex-start; }
         .wsl-search { max-width: none; }
-        .wsl-form-grid { grid-template-columns: 1fr; }
+        .wsl-member-grid { grid-template-columns: 1fr; }
         .wsl-card-top { flex-direction: column; }
         .wsl-card-actions { align-self: flex-end; }
       }
       @media (max-width: 520px) {
-        .wsl-pair { grid-template-columns: 1fr; }
-        .wsl-link-icon { justify-content: flex-start; transform: rotate(90deg); }
+        .wsl-member-row { grid-template-columns: 1fr; }
         .wsl-select-row { grid-template-columns: 1fr; }
       }
     `;
@@ -182,23 +191,25 @@ window.__ModuleLoader__.load({
           h('button', { type: 'button', className: 'wsl-button', disabled, onClick: onBrowse }, browseLabel)));
     }
 
-    function Endpoint({ item, current, t }) {
-      return h('div', { className: 'wsl-endpoint' },
-        h('div', { className: 'wsl-endpoint-name' }, item.name || item.path,
-          current ? h('span', { className: 'wsl-current-badge' }, t('current')) : null),
-        h('div', { className: 'wsl-path', title: item.path }, item.path),
+    function GroupMember({ item, current, t }) {
+      return h('div', { className: 'wsl-member-row' },
+        h('div', null,
+          h('div', { className: 'wsl-endpoint-name' }, item.name || item.path,
+            current ? h('span', { className: 'wsl-current-badge' }, t('current')) : null),
+          h('div', { className: 'wsl-path', title: item.path }, item.path)),
         h('span', { className: 'wsl-role' }, item.role || t('rolesMissing')));
     }
 
     function RelationCard({ relation, currentPath, busy, confirming, canEdit, canRemove, onEdit, onAskRemove, onCancelRemove, onConfirmRemove, editButtonRef, removeButtonRef, t }) {
       const key = relationKey(relation);
-      const [a, b] = relation.workspaces;
       return h('li', { className: 'wsl-card', 'data-relation-key': key },
         h('div', { className: 'wsl-card-top' },
-          h('div', { className: 'wsl-pair' },
-            h(Endpoint, { item: a, current: containsPath(a.path, currentPath), t }),
-            h('span', { className: 'wsl-link-icon' }, h(LinkGlyph, { size: 18 })),
-            h(Endpoint, { item: b, current: containsPath(b.path, currentPath), t })),
+          h('div', { className: 'wsl-card-main' },
+            h('div', { className: 'wsl-group-meta' }, t('memberCount', { count: relation.workspaces.length })),
+            h('div', { className: 'wsl-card-members' },
+              relation.workspaces.map(item => h(GroupMember, {
+                key: item.path, item, current: containsPath(item.path, currentPath), t,
+              })))),
           canEdit || canRemove ? h('div', { className: 'wsl-card-actions' },
             canEdit ? h('button', { ref: editButtonRef, type: 'button', className: 'wsl-button', disabled: busy, onClick: () => onEdit(relation) }, t('edit')) : null,
             canRemove ? h('button', { ref: removeButtonRef, type: 'button', className: 'wsl-button wsl-button-danger', disabled: busy, onClick: () => onAskRemove(relation) }, t('remove')) : null) : null),
@@ -231,6 +242,7 @@ window.__ModuleLoader__.load({
       const removeReturnRef = React.useRef(null);
       const editButtonRefs = React.useRef(new Map());
       const removeButtonRefs = React.useRef(new Map());
+      const memberSequence = React.useRef(0);
       const titleId = React.useId();
       const formId = React.useId();
       const searchId = React.useId();
@@ -240,6 +252,12 @@ window.__ModuleLoader__.load({
       const currentWorkspace = workspaces
         .filter(item => containsPath(item.path, currentCwd))
         .sort((left, right) => right.path.length - left.path.length)[0];
+      const makeMember = (data = {}) => ({
+        uid: ++memberSequence.current,
+        path: data.path || '',
+        name: data.name || '',
+        role: data.role || '',
+      });
 
       const load = React.useCallback(async (showLoading = true) => {
         const generation = ++requestGeneration.current;
@@ -292,20 +310,20 @@ window.__ModuleLoader__.load({
         setNotice(null);
         setEditor({
           key: null,
-          aPath: currentWorkspace?.path || '', bPath: '',
-          aName: currentWorkspace?.name || '', bName: '', aRole: '', bRole: '', description: '',
+          members: [makeMember(currentWorkspace || {}), makeMember()],
+          description: '',
         });
       };
       const openEdit = relation => {
         if (busy) return;
-        const [a, b] = relation.workspaces;
         editorReturnRef.current = { type: 'edit', key: relationKey(relation) };
         setFormError(null);
         setNotice(null);
         setConfirmKey(null);
         setEditor({
-          key: relationKey(relation), aPath: a.path, bPath: b.path,
-          aName: a.name || '', bName: b.name || '', aRole: a.role || '', bRole: b.role || '', description: relation.description || '',
+          key: relationKey(relation),
+          members: relation.workspaces.map(item => makeMember(item)),
+          description: relation.description || '',
         });
       };
       const askRemove = relation => {
@@ -314,14 +332,41 @@ window.__ModuleLoader__.load({
         setConfirmKey(relationKey(relation));
         setNotice(null);
       };
-      const updateEditor = (field, value) => { setEditor(current => ({ ...current, [field]: value })); };
-      const browse = async field => {
+      const updateMember = (index, field, value) => {
+        setEditor(current => {
+          if (!current || !current.members[index]) return current;
+          const members = current.members.slice();
+          members[index] = { ...members[index], [field]: value };
+          return { ...current, members };
+        });
+      };
+      const addMember = () => {
+        const member = makeMember();
+        setEditor(current => {
+          if (!current || current.members.length >= MAX_GROUP_MEMBERS) return current;
+          return { ...current, members: [...current.members, member] };
+        });
+      };
+      const removeMember = index => {
+        setEditor(current => {
+          if (!current || current.members.length <= 2) return current;
+          return { ...current, members: current.members.filter((_member, memberIndex) => memberIndex !== index) };
+        });
+      };
+      const browseMember = async (index, field) => {
         const target = editorRef.current;
-        if (!target || busy) return;
+        const targetMember = target?.members[index];
+        if (!target || !targetMember || busy) return;
         try {
           const selected = await pickDirectory();
           if (!selected || editorRef.current !== target) return;
-          setEditor(current => current === target ? { ...current, [field]: selected } : current);
+          setEditor(current => {
+            if (current !== target) return current;
+            return {
+              ...current,
+              members: current.members.map(member => member.uid === targetMember.uid ? { ...member, [field]: selected } : member),
+            };
+          });
         } catch (reason) {
           if (editorRef.current === target) setFormError(t('browseFailed', { message: errorMessage(reason) }));
         }
@@ -330,15 +375,19 @@ window.__ModuleLoader__.load({
         event.preventDefault();
         const active = editorRef.current;
         if (!active || busy) return;
-        if (!active.aPath || !active.bPath) { setFormError(t('requiredPath')); return; }
-        if (active.aPath.toLowerCase() === active.bPath.toLowerCase()) { setFormError(t('samePath')); return; }
+        if (active.members.length < 2) { setFormError(t('requiredPath')); return; }
+        if (active.members.length > MAX_GROUP_MEMBERS) { setFormError(t('groupHelp', { max: MAX_GROUP_MEMBERS })); return; }
+        if (active.members.some(member => !member.path)) { setFormError(t('requiredPath')); return; }
+        const paths = active.members.map(member => member.path.trim().toLowerCase());
+        if (new Set(paths).size !== paths.length) { setFormError(t('samePath')); return; }
         setBusy('save');
         setFormError(null);
         setNotice(null);
         try {
           const result = await api.save({
-            aPath: active.aPath, bPath: active.bPath,
-            aName: active.aName, bName: active.bName, aRole: active.aRole, bRole: active.bRole, description: active.description,
+            members: active.members.map(member => ({ path: member.path, name: member.name, role: member.role })),
+            description: active.description,
+            ...active.key ? { originalKey: active.key } : {},
           });
           const refreshed = await load(false);
           setEditor(current => current === active ? null : current);
@@ -358,7 +407,7 @@ window.__ModuleLoader__.load({
         setBusy(key);
         setNotice(null);
         try {
-          const result = await api.unlink({ aPath: relation.workspaces[0].path, bPath: relation.workspaces[1].path });
+          const result = await api.unlink({ paths: relation.workspaces.map(item => item.path) });
           const refreshed = await load(false);
           setConfirmKey(null);
           setNotice(refreshed
@@ -395,17 +444,34 @@ window.__ModuleLoader__.load({
         loadError ? h('div', { className: 'wsl-notice wsl-notice-error', role: 'alert' }, t('loadFailed', { message: loadError })) : null,
         editor && canWrite ? h('form', { className: 'wsl-panel', onSubmit: save, 'aria-labelledby': `${formId}-title`, 'aria-busy': busy === 'save' },
           h('h3', { className: 'wsl-panel-title', id: `${formId}-title` }, t(editor.key ? 'editTitle' : 'createTitle')),
-          h('div', { className: 'wsl-form-grid' },
-            h(WorkspaceField, { id: `${formId}-a`, label: t('workspaceA'), value: editor.aPath, workspaces, disabled: busy !== null || Boolean(editor.key), onChange: value => updateEditor('aPath', value), onBrowse: () => browse('aPath'), browseLabel: t('browse'), selectLabel: t('selectWorkspace'), inputRef: editor.key ? undefined : firstFieldRef }),
-            h(WorkspaceField, { id: `${formId}-b`, label: t('workspaceB'), value: editor.bPath, workspaces, disabled: busy !== null || Boolean(editor.key), onChange: value => updateEditor('bPath', value), onBrowse: () => browse('bPath'), browseLabel: t('browse'), selectLabel: t('selectWorkspace') }),
-            h(TextField, { id: `${formId}-an`, label: t('nameA'), value: editor.aName, disabled: busy !== null, placeholder: t('namePlaceholder'), inputRef: editor.key ? firstFieldRef : undefined, onChange: value => updateEditor('aName', value) }),
-            h(TextField, { id: `${formId}-bn`, label: t('nameB'), value: editor.bName, disabled: busy !== null, placeholder: t('namePlaceholder'), onChange: value => updateEditor('bName', value) }),
-            h(TextField, { id: `${formId}-ar`, label: t('roleA'), value: editor.aRole, disabled: busy !== null, placeholder: t('roleAPlaceholder'), onChange: value => updateEditor('aRole', value) }),
-            h(TextField, { id: `${formId}-br`, label: t('roleB'), value: editor.bRole, disabled: busy !== null, placeholder: t('roleBPlaceholder'), onChange: value => updateEditor('bRole', value) }),
-            h('div', { className: 'wsl-field wsl-field-full' },
-              h('label', { className: 'wsl-label', htmlFor: `${formId}-note` }, t('note')),
-              h('textarea', { id: `${formId}-note`, className: 'wsl-textarea', value: editor.description, disabled: busy !== null, placeholder: t('notePlaceholder'), onChange: event => updateEditor('description', event.currentTarget.value) }))),
-          editor.key ? h('p', { className: 'wsl-help' }, t('pathsLocked')) : null,
+          h('div', { className: 'wsl-members' },
+            editor.members.map((member, index) => h('div', {
+              className: 'wsl-member', key: member.uid, role: 'group', 'aria-labelledby': `${formId}-member-${index}`,
+            },
+              h('div', { className: 'wsl-member-head' },
+                h('h4', { className: 'wsl-member-title', id: `${formId}-member-${index}` }, t('memberLabel', { index: index + 1 })),
+                editor.members.length > 2 ? h('button', { type: 'button', className: 'wsl-button wsl-button-small wsl-button-danger', disabled: busy !== null, onClick: () => removeMember(index) }, t('removeMember')) : null),
+              h(WorkspaceField, {
+                id: `${formId}-path-${index}`, label: t('workspacePath'), value: member.path, workspaces, disabled: busy !== null,
+                onChange: value => updateMember(index, 'path', value),
+                onBrowse: () => browseMember(index, 'path'),
+                browseLabel: t('browse'), selectLabel: t('selectWorkspace'),
+                inputRef: index === 0 ? firstFieldRef : undefined,
+              }),
+              h('div', { className: 'wsl-member-grid' },
+                h(TextField, {
+                  id: `${formId}-name-${index}`, label: t('name'), value: member.name, disabled: busy !== null,
+                  placeholder: t('namePlaceholder'), onChange: value => updateMember(index, 'name', value),
+                }),
+                h(TextField, {
+                  id: `${formId}-role-${index}`, label: t('role'), value: member.role, disabled: busy !== null,
+                  placeholder: t('rolePlaceholder'), onChange: value => updateMember(index, 'role', value),
+                }))))),
+          h('button', { type: 'button', className: 'wsl-button wsl-add-member', disabled: busy !== null || editor.members.length >= MAX_GROUP_MEMBERS, onClick: addMember }, t('addMember')),
+          h('div', { className: 'wsl-field', style: { marginTop: '12px' } },
+            h('label', { className: 'wsl-label', htmlFor: `${formId}-note` }, t('note')),
+            h('textarea', { id: `${formId}-note`, className: 'wsl-textarea', value: editor.description, disabled: busy !== null, placeholder: t('notePlaceholder'), onChange: event => { const value = event.currentTarget.value; setEditor(current => current ? { ...current, description: value } : current); } })),
+          h('p', { className: 'wsl-help' }, t('groupHelp', { max: MAX_GROUP_MEMBERS })),
           formError ? h('div', { className: 'wsl-notice wsl-notice-error', role: 'alert', style: { marginTop: '12px', marginBottom: 0 } }, formError) : null,
           h('div', { className: 'wsl-form-actions' },
             h('button', { type: 'button', className: 'wsl-button', disabled: busy !== null, onClick: () => { if (busy) return; setEditor(null); setFormError(null); } }, t('cancel')),

@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Workspace links",
-    "description": "Manage related frontend, backend, and other projects visually in Settings → Workspace links. Choose two directories from registered workspaces or the system directory picker, set names, roles, and collaboration notes, then search, edit, or unlink at any time. Agents automatically receive the corresponding project context. Links do not grant file permissions or modify other projects."
+    "description": "Build visual groups of 2–20 related projects in Settings → Workspace links. Choose directories, set names, roles, and collaboration notes, then add or remove members, search, edit, or unlink at any time. Every workspace in a group automatically receives the other members’ paths and context. Groups do not grant file permissions or modify other projects."
   }
 }

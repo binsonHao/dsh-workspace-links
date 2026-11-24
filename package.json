@@ -1,7 +1,7 @@
 {
   "name": "dsh-workspace-links",
-  "version": "2.1.0",
-  "description": "Visual related-workspace management and automatic project context for DeepSeek Harness.",
+  "version": "2.2.0",
+  "description": "Visual multi-workspace groups and automatic project context for DeepSeek Harness.",
   "type": "module",
   "exports": {
     ".": "./index.js",

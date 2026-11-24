@@ -4,14 +4,17 @@ import path from 'node:path'
 import {
   buildWorkspaceView,
   deleteRelation,
+  groupKeyForPaths,
   normalizeRelations,
   renderWorkspaceContext,
+  saveGroup,
   saveRelation,
 } from '../core.js'
 import { installWorkspaceRuntime } from '../runtime.js'
 
 const frontend = path.resolve('F:\\workspace\\shop-frontend')
 const backend = path.resolve('F:\\workspace\\shop-backend')
+const mobile = path.resolve('F:\\workspace\\shop-mobile')
 const backendAlias = `${backend}-alias`
 
 function canonicalPath(pathValue) {
@@ -38,7 +41,7 @@ function harness(initialRelations = [], cwd = frontend) {
   let savedConfig = { relations: initialRelations }
   let prompt
   let tool
-  const workspaces = [workspace(frontend, '商城前端'), workspace(backend, '商城后端')]
+  const workspaces = [workspace(frontend, '商城前端'), workspace(backend, '商城后端'), workspace(mobile, '商城移动端')]
   const ctx = {
     fiber: { entry: { id: 'workspace-links' } },
     effect(callback) { callback() },
@@ -168,12 +171,89 @@ test('工具持久保存关联，重载后自动注入并支持 list', async () 
   assert.match(context, /前后端联调/)
   const listed = JSON.parse(await reloaded.tool.execute({ action: 'list' }, reloaded.exec))
   assert.equal(listed.relatedWorkspaces.length, 1)
-  assert.equal(listed.registeredWorkspaces.length, 2)
+  assert.equal(listed.registeredWorkspaces.length, 3)
 
   const reverse = harness(first.getConfig().relations, backend)
   const reverseContext = reverse.prompt.text({ agent: reverse.agent })
   assert.match(reverseContext, /商城前端/)
   assert.match(reverseContext, /Vue 前端/)
+})
+
+test('三人组中任意成员都能看到其余全部成员', () => {
+  const relations = normalizeRelations([{
+    workspaces: [
+      { path: frontend, name: '商城前端', role: 'Vue 前端' },
+      { path: backend, name: '商城后端', role: 'Spring Boot 后端' },
+      { path: mobile, name: '商城移动端', role: 'UniApp 移动端' },
+    ],
+    description: '三端共用接口契约',
+  }])
+  for (const [cwd, expected] of [
+    [frontend, [backend, mobile]],
+    [backend, [frontend, mobile]],
+    [mobile, [frontend, backend]],
+  ]) {
+    const view = buildWorkspaceView({ relations, cwd, originalCwd: cwd })
+    assert.equal(view.related.length, 2)
+    assert.deepEqual(view.related.map(item => item.path).sort(), expected.sort())
+    assert.match(renderWorkspaceContext(view), /三端共用接口契约/)
+  }
+})
+
+test('编辑组时不能与另一组变成完全相同', () => {
+  const initial = normalizeRelations([
+    { workspaces: [{ path: frontend }, { path: backend }], description: 'A' },
+    { workspaces: [{ path: frontend }, { path: mobile }], description: 'B' },
+  ])
+  assert.throws(() => saveGroup(initial, {
+    workspaces: [{ path: frontend }, { path: mobile }],
+    description: 'B',
+  }, groupKeyForPaths([frontend, backend])), /重复/)
+})
+
+test('多人组支持整体编辑替换成员，并用完整路径集合解除', async () => {
+  const current = harness([])
+  const created = await current.operations.save({
+    members: [
+      { path: frontend, name: '前端', role: 'Vue' },
+      { path: backend, name: '后端', role: 'Spring Boot' },
+      { path: mobile, name: '移动端', role: 'UniApp' },
+    ],
+    description: '三端组',
+  })
+  assert.equal(created.relation.workspaces.length, 3)
+  const key = groupKeyForPaths([frontend, backend, mobile])
+  const reloaded = harness(current.getConfig().relations)
+  const edited = await reloaded.operations.save({
+    members: [{ path: frontend, name: '前端' }, { path: backend, name: '后端' }],
+    originalKey: key,
+    description: '改为前后端组',
+  })
+  assert.equal(edited.action, 'updated')
+  assert.equal(reloaded.getConfig().relations.length, 1)
+  assert.equal(reloaded.getConfig().relations[0].workspaces.length, 2)
+  const updated = harness(reloaded.getConfig().relations)
+  const removed = await updated.operations.remove({ paths: [frontend, backend] })
+  assert.equal(removed.status, 'removed')
+  assert.equal(updated.getConfig().relations.length, 0)
+})
+
+test('AI 工具可以用 group 创建多人组', async () => {
+  const group = harness([])
+  const result = JSON.parse(await group.tool.execute({
+    action: 'group',
+    members: [
+      { path: frontend, name: '前端', role: 'Vue' },
+      { path: backend, name: '后端', role: 'Spring Boot' },
+      { path: mobile, name: '移动端', role: 'UniApp' },
+    ],
+    description: '工具创建的三端组',
+  }, group.exec))
+  assert.equal(result.status, 'saved')
+  assert.equal(group.getConfig().relations[0].workspaces.length, 3)
+  const reloaded = harness(group.getConfig().relations, mobile)
+  const view = reloaded.operations.viewFor({ session: { cwd: mobile, header: { cwd: mobile } } })
+  assert.equal(view.related.length, 2)
 })
 
 test('unlink 只移除当前关系，未命中时明确返回 not-found', async () => {
@@ -186,9 +266,9 @@ test('unlink 只移除当前关系，未命中时明确返回 not-found', async 
 })
 
 test('非法配置、自关联和未知 action 会失败', async () => {
-  assert.throws(() => normalizeRelations([relation({ workspaces: [{ path: frontend }, { path: frontend }] })]), /自身/)
+  assert.throws(() => normalizeRelations([relation({ workspaces: [{ path: frontend }, { path: frontend }] })]), /重复/)
   const current = harness([])
-  await assert.rejects(current.tool.execute({ action: 'link', path: frontend }, current.exec), /自身/)
+  await assert.rejects(current.tool.execute({ action: 'link', path: frontend }, current.exec), /重复/)
   await assert.rejects(current.tool.execute({ action: 'unknown' }, current.exec), /未知 action/)
 })
 
@@ -226,7 +306,7 @@ test('可视化 Host 操作无需会话，支持编辑清空并与列表、解�
   assert.equal(created.action, 'created')
   const reloaded = harness(current.getConfig().relations)
   assert.equal(reloaded.operations.list().relations.length, 1)
-  assert.equal(reloaded.operations.list().workspaces.length, 2)
+  assert.equal(reloaded.operations.list().workspaces.length, 3)
 
   const updated = await reloaded.operations.save({ aPath: frontend, bPath: backend, aRole: null, description: '' })
   assert.equal(updated.action, 'updated')

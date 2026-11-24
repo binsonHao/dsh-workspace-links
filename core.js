@@ -1,6 +1,7 @@
 import path from 'node:path'
 
 export const MAX_RELATIONS = 100
+export const MAX_GROUP_MEMBERS = 20
 export const MAX_NAME_LENGTH = 100
 export const MAX_ROLE_LENGTH = 100
 export const MAX_DESCRIPTION_LENGTH = 1000
@@ -58,14 +59,17 @@ function normalizeRelation(raw, index) {
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
     throw new Error(`relations[${index}] 必须是对象`)
   }
-  if (!Array.isArray(raw.workspaces) || raw.workspaces.length !== 2) {
-    throw new Error(`relations[${index}].workspaces 必须恰好包含两个工作区`)
+  if (!Array.isArray(raw.workspaces) || raw.workspaces.length < 2 || raw.workspaces.length > MAX_GROUP_MEMBERS) {
+    throw new Error(`relations[${index}].workspaces 必须包含 2–${MAX_GROUP_MEMBERS} 个工作区`)
   }
   const workspaces = raw.workspaces.map((endpoint, endpointIndex) => (
     normalizeEndpoint(endpoint, `relations[${index}].workspaces[${endpointIndex}]`)
   ))
-  if (samePath(workspaces[0].path, workspaces[1].path)) {
-    throw new Error(`relations[${index}] 不能把工作区关联到自身`)
+  const paths = new Set()
+  for (const workspace of workspaces) {
+    const key = pathKey(workspace.path)
+    if (paths.has(key)) throw new Error(`relations[${index}] 不能重复包含同一个工作区`)
+    paths.add(key)
   }
   const description = cleanText(raw.description, `relations[${index}].description`, MAX_DESCRIPTION_LENGTH)
   return {
@@ -74,12 +78,16 @@ function normalizeRelation(raw, index) {
   }
 }
 
+export function groupKeyForPaths(paths) {
+  return JSON.stringify(paths.map(pathKey).sort())
+}
+
 export function relationKeyForPaths(left, right) {
-  return JSON.stringify([pathKey(left), pathKey(right)].sort())
+  return groupKeyForPaths([left, right])
 }
 
 export function relationKey(relation) {
-  return relationKeyForPaths(relation.workspaces[0].path, relation.workspaces[1].path)
+  return groupKeyForPaths(relation.workspaces.map(workspace => workspace.path))
 }
 
 export function normalizeRelations(raw) {
@@ -101,10 +109,17 @@ export function findRelation(relations, left, right) {
   return relations.find(relation => relationKey(relation) === key)
 }
 
-export function saveRelation(relations, value) {
+export function saveGroup(relations, value, originalKey) {
   const relation = normalizeRelation(value, 0)
   const key = relationKey(relation)
-  const index = relations.findIndex(item => relationKey(item) === key)
+  const originalIndex = originalKey === undefined
+    ? -1
+    : relations.findIndex(item => relationKey(item) === originalKey)
+  const sameKeyIndex = relations.findIndex(item => relationKey(item) === key)
+  if (originalKey !== undefined && sameKeyIndex >= 0 && sameKeyIndex !== originalIndex) {
+    throw new Error(`工作区关联组重复：${relation.workspaces.map(item => item.path).join(' ↔ ')}`)
+  }
+  const index = originalIndex >= 0 ? originalIndex : sameKeyIndex
   if (index < 0 && relations.length >= MAX_RELATIONS) {
     throw new Error(`最多保存 ${MAX_RELATIONS} 条工作区关联`)
   }
@@ -114,14 +129,22 @@ export function saveRelation(relations, value) {
   return { relations: next, relation, action: index < 0 ? 'created' : 'updated' }
 }
 
-export function deleteRelation(relations, left, right) {
-  const key = relationKeyForPaths(left, right)
+export function saveRelation(relations, value) {
+  return saveGroup(relations, value)
+}
+
+export function deleteGroup(relations, paths) {
+  const key = groupKeyForPaths(paths)
   const index = relations.findIndex(relation => relationKey(relation) === key)
   if (index < 0) return { relations: [...relations], relation: undefined }
   return {
     relations: relations.filter((_relation, relationIndex) => relationIndex !== index),
     relation: relations[index],
   }
+}
+
+export function deleteRelation(relations, left, right) {
+  return deleteGroup(relations, [left, right])
 }
 
 function registryByPath(workspaces) {
@@ -158,15 +181,17 @@ export function buildWorkspaceView({ relations, cwd, originalCwd, workspaces = [
     }))
     const match = scored.find(item => item.score >= 0 && item.score === Math.max(...scored.map(other => other.score)))
     if (match === undefined) continue
-    const other = scored.find(item => item.endpoint !== match.endpoint).endpoint
     if (match.score > currentScore) {
       current = match.endpoint
       currentScore = match.score
     }
-    related.push({
-      ...publicEndpoint(other, registry),
-      ...relation.description === undefined ? {} : { description: relation.description },
-    })
+    for (const other of relation.workspaces) {
+      if (samePath(other.path, match.endpoint.path)) continue
+      related.push({
+        ...publicEndpoint(other, registry),
+        ...relation.description === undefined ? {} : { description: relation.description },
+      })
+    }
   }
 
   if (current === undefined) {
