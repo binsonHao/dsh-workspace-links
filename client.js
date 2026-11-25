@@ -40,7 +40,7 @@ window.__ModuleLoader__.load({
       namePlaceholder: '默认使用工作区标题', rolePlaceholder: '例如：Vue 前端、Spring Boot 后端', note: '协作备注',
       notePlaceholder: '例如：前后端共用 API 契约，修改接口时同步检查两边。',
       groupHelp: '一个组可包含 2–{max} 个工作区；组内任一成员都能看到其他成员的路径、角色和备注。',
-      save: '保存关联组', saving: '正在保存…', cancel: '取消', edit: '编辑', remove: '解除关联',
+      back: '返回列表', discardConfirm: '放弃未保存的修改并返回列表？', save: '保存关联组', saving: '正在保存…', cancel: '取消', edit: '编辑', remove: '解除关联',
       removeTitle: '确认解除这组关联', removeDescription: '只删除这组关联，不会删除工作区、会话或任何项目文件。', confirmRemove: '确认解除', removing: '正在解除…',
       created: '关联组已创建，组内工作区后续请求会自动获得其他成员的项目上下文。', updated: '关联组已更新。', removed: '关联组已解除；工作区和项目文件均未改动。',
       notFound: '这组关联已经不存在，列表已刷新。', saveFailed: '保存关联组失败：{message}', removeFailed: '解除关联组失败：{message}',
@@ -62,7 +62,7 @@ window.__ModuleLoader__.load({
       namePlaceholder: 'Defaults to the workspace title', rolePlaceholder: 'For example: Vue frontend, Spring Boot backend', note: 'Collaboration notes',
       notePlaceholder: 'For example: both projects share an API contract and must be checked together.',
       groupHelp: 'A group can contain 2–{max} workspaces. Every member sees the paths, roles, and notes of all other members.',
-      save: 'Save group', saving: 'Saving…', cancel: 'Cancel', edit: 'Edit', remove: 'Unlink',
+      back: 'Back to list', discardConfirm: 'Discard unsaved changes and return to the list?', save: 'Save group', saving: 'Saving…', cancel: 'Cancel', edit: 'Edit', remove: 'Unlink',
       removeTitle: 'Unlink this group?', removeDescription: 'Only this relationship is removed. Workspaces, sessions, and project files are not deleted.', confirmRemove: 'Unlink', removing: 'Unlinking…',
       created: 'Group created. Members will receive the other projects’ context in subsequent requests.', updated: 'Group updated.', removed: 'Group removed. Workspaces and project files were not changed.',
       notFound: 'This group no longer exists. The list has been refreshed.', saveFailed: 'Could not save the group: {message}', removeFailed: 'Could not unlink the group: {message}',
@@ -91,7 +91,8 @@ window.__ModuleLoader__.load({
       .wsl-button-small { min-height: 28px; padding: 3px 9px; font-size: 12px; }
       .wsl-button:focus-visible, .wsl-input:focus, .wsl-select:focus, .wsl-textarea:focus { outline: 2px solid var(--dsw-alias-brand-primary); outline-offset: 1px; }
       .wsl-panel { margin-bottom: 16px; padding: 18px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 12px; background: var(--dsw-alias-bg-layer-1); }
-      .wsl-panel-title { margin: 0 0 14px; font-size: 16px; line-height: 22px; font-weight: 600; }
+      .wsl-panel-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+      .wsl-panel-title { margin: 0; font-size: 16px; line-height: 22px; font-weight: 600; }
       .wsl-members { display: flex; flex-direction: column; gap: 10px; }
       .wsl-member { padding: 12px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 9px; background: var(--dsw-alias-bg-base); }
       .wsl-member-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 9px; }
@@ -164,6 +165,13 @@ window.__ModuleLoader__.load({
 
     function relationKey(relation) {
       return JSON.stringify(relation.workspaces.map(item => item.path.toLowerCase()).sort());
+    }
+
+    function editorSignature(editor) {
+      return JSON.stringify({
+        members: editor.members.map(member => ({ path: member.path, name: member.name, role: member.role })),
+        description: editor.description,
+      });
     }
 
     function containsPath(parent, candidate) {
@@ -308,11 +316,9 @@ window.__ModuleLoader__.load({
         editorReturnRef.current = { type: 'add' };
         setFormError(null);
         setNotice(null);
-        setEditor({
-          key: null,
-          members: [makeMember(currentWorkspace || {}), makeMember()],
-          description: '',
-        });
+        const members = [makeMember(currentWorkspace || {}), makeMember()];
+        const description = '';
+        setEditor({ key: null, members, description, initial: editorSignature({ members, description }) });
       };
       const openEdit = relation => {
         if (busy) return;
@@ -320,17 +326,23 @@ window.__ModuleLoader__.load({
         setFormError(null);
         setNotice(null);
         setConfirmKey(null);
-        setEditor({
-          key: relationKey(relation),
-          members: relation.workspaces.map(item => makeMember(item)),
-          description: relation.description || '',
-        });
+        const members = relation.workspaces.map(item => makeMember(item));
+        const description = relation.description || '';
+        setEditor({ key: relationKey(relation), members, description, initial: editorSignature({ members, description }) });
       };
       const askRemove = relation => {
         if (busy) return;
         removeReturnRef.current = relationKey(relation);
         setConfirmKey(relationKey(relation));
         setNotice(null);
+      };
+      const goBack = () => {
+        if (busy) return;
+        const current = editorRef.current;
+        if (!current) return;
+        if (editorSignature(current) !== current.initial && !window.confirm(t('discardConfirm'))) return;
+        setEditor(null);
+        setFormError(null);
       };
       const updateMember = (index, field, value) => {
         setEditor(current => {
@@ -443,7 +455,9 @@ window.__ModuleLoader__.load({
         notice ? h('div', { className: `wsl-notice wsl-notice-${notice.tone}`, role: notice.tone === 'error' ? 'alert' : 'status', 'aria-live': notice.tone === 'error' ? 'assertive' : 'polite', 'aria-atomic': 'true' }, notice.text) : null,
         loadError ? h('div', { className: 'wsl-notice wsl-notice-error', role: 'alert' }, t('loadFailed', { message: loadError })) : null,
         editor && canWrite ? h('form', { className: 'wsl-panel', onSubmit: save, 'aria-labelledby': `${formId}-title`, 'aria-busy': busy === 'save' },
-          h('h3', { className: 'wsl-panel-title', id: `${formId}-title` }, t(editor.key ? 'editTitle' : 'createTitle')),
+          h('div', { className: 'wsl-panel-head' },
+            h('button', { type: 'button', className: 'wsl-button wsl-button-small', disabled: busy !== null, onClick: goBack }, t('back')),
+            h('h3', { className: 'wsl-panel-title', id: `${formId}-title` }, t(editor.key ? 'editTitle' : 'createTitle'))),
           h('div', { className: 'wsl-members' },
             editor.members.map((member, index) => h('div', {
               className: 'wsl-member', key: member.uid, role: 'group', 'aria-labelledby': `${formId}-member-${index}`,
@@ -474,7 +488,7 @@ window.__ModuleLoader__.load({
           h('p', { className: 'wsl-help' }, t('groupHelp', { max: MAX_GROUP_MEMBERS })),
           formError ? h('div', { className: 'wsl-notice wsl-notice-error', role: 'alert', style: { marginTop: '12px', marginBottom: 0 } }, formError) : null,
           h('div', { className: 'wsl-form-actions' },
-            h('button', { type: 'button', className: 'wsl-button', disabled: busy !== null, onClick: () => { if (busy) return; setEditor(null); setFormError(null); } }, t('cancel')),
+            h('button', { type: 'button', className: 'wsl-button', disabled: busy !== null, onClick: goBack }, t('cancel')),
             h('button', { type: 'submit', className: 'wsl-button wsl-button-primary', disabled: busy !== null }, busy === 'save' ? t('saving') : t('save')))) : null,
         h('div', { className: 'wsl-toolbar' },
           h('div', { className: 'wsl-search' },
